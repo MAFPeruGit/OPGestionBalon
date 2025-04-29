@@ -9,18 +9,33 @@
   <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
     <h5 class="text-center mb-4">Crear OP - Gestión Balón</h5>
     <form id="opForm">
-      <div  class="mb-3">
-        <label  for="operacion" class="form-label">Número de operación</label>
+      <div class="mb-3">
+        <label for="operacion" class="form-label">Nombre de la operación</label>
         <input type="text" class="form-control" id="operacion" name="operacion" required>
       </div>
-      <button style="background-color: red; border: none;" type="submit" class="btn btn-primary w-100">Enviar</button>
+      <button style="background-color: red; border:none" type="submit" id="submitBtn" class="btn btn-primary w-100 d-flex justify-content-center align-items-center">
+        <span id="btnText">Enviar</span>
+        <div id="spinner" class="spinner-border spinner-border-sm text-light ms-2 d-none" role="status"></div>
+      </button>
     </form>
+    <div id="mensaje" class="alert mt-3 d-none" role="alert"></div>
   </div>
 
   <script>
-    document.getElementById("opForm").addEventListener("submit", function(e) {
+    const form = document.getElementById("opForm");
+    const mensajeDiv = document.getElementById("mensaje");
+    const spinner = document.getElementById("spinner");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", function(e) {
       e.preventDefault();
-      const operacion = document.getElementById("operacion").value;
+
+      // Mostrar spinner y desactivar botón
+      spinner.classList.remove("d-none");
+      submitBtn.disabled = true;
+
+      const operacionInput = document.getElementById("operacion");
+      const operacion = operacionInput.value;
 
       fetch("https://prod-132.westus.logic.azure.com:443/workflows/37b52c5d7dec463c9ba30c4dc1ad44a3/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=vaV5PXMbfnMctQEASJFZ6Er8k7YXpU6A-nRgyjtIZEY", {
         method: "POST",
@@ -29,13 +44,21 @@
         },
         body: JSON.stringify({ operacion: operacion })
       })
-      .then(response => {
-        if (!response.ok) throw new Error("Error en la solicitud");
-        alert("Operación enviada con éxito");
+      .then(response => response.json())
+      .then(data => {
+        mensajeDiv.className = "alert alert-success mt-3";
+        mensajeDiv.innerText = data.message || "Operación enviada con éxito.";
+        form.reset(); // Limpiar el formulario
       })
       .catch(error => {
-        alert("Hubo un error al enviar la operación");
+        mensajeDiv.className = "alert alert-danger mt-3";
+        mensajeDiv.innerText = "Hubo un error al enviar la operación.";
         console.error(error);
+      })
+      .finally(() => {
+        spinner.classList.add("d-none");
+        submitBtn.disabled = false;
+        mensajeDiv.classList.remove("d-none");
       });
     });
   </script>
